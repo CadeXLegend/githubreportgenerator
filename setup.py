@@ -24,7 +24,6 @@ setup(
 
         keywords=['test coverage', 'dotnet report', 'cobertura', 'xplat', 'code coverage', 'github', 'github markdown'],
         classifiers= [
-            "Development Status :: 2 - Pre Alpha",
             "Intended Audience :: Developers",
             "Programming Language :: Python :: 3",
             "Operating System :: MacOS :: MacOS X",
