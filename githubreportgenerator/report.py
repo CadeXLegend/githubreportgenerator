@@ -4,9 +4,9 @@ import sys
 import os
 from datetime import datetime
 
-def create_arg_parser():
-    # Creates and returns the ArgumentParser object
+from .models import map_json_to_model
 
+def create_arg_parser():
     parser = argparse.ArgumentParser(description='A Github Markdown Coverage Report Generator')
     parser.add_argument('reportJson', type=str, help='Path to the generated json report')
     parser.add_argument('--outputDir', type=str, help='Path to where you want to save the report')
@@ -16,10 +16,10 @@ def create_report():
     arg_parser = create_arg_parser()
     parsed_args = arg_parser.parse_args(sys.argv[1:])
 
-    json_report = open(parsed_args.reportJson)
-    data = json.load(json_report)
+    with open(parsed_args.reportJson) as json_report:
+        coverage_data = map_json_to_model(json_report.read())
 
-    generated_on = datetime.strptime(data['summary']['generatedon'], "%Y-%m-%dT%H:%M:%SZ")
+    generated_on = datetime.strptime(coverage_data.summary.generatedon, "%Y-%m-%dT%H:%M:%SZ")
     generated_on_str = generated_on.strftime("%m/%d/%Y - %H:%M:%S")
 
     markdown_content = f"""# Summary
@@ -30,21 +30,21 @@ def create_report():
 |:---|:---|
 | Generated on: | {generated_on_str} |
 | Coverage date: | {generated_on_str} |
-| Parser: | {data['summary']['parser']} |
-| Assemblies: | {data['summary']['assemblies']} |
-| Classes: | {data['summary']['classes']} |
-| Files: | {data['summary']['files']} |
-| **Line coverage:** | {data['summary']['linecoverage']}% ({data['summary']['coveredlines']} of {data['summary']['coverablelines']}) |
-| Covered lines: | {data['summary']['coveredlines']} |
-| Uncovered lines: | {data['summary']['uncoveredlines']} |
-| Coverable lines: | {data['summary']['coverablelines']} |
-| Total lines: | {data['summary']['totallines']} |
-| **Branch coverage:** | {data['summary']['branchcoverage']}% ({data['summary']['coveredbranches']} of {data['summary']['totalbranches']}) |
-| Covered branches: | {data['summary']['coveredbranches']} |
-| Total branches: | {data['summary']['totalbranches']} |
-| **Method coverage:** | {data['summary']['methodcoverage']}% ({data['summary']['coveredmethods']} of {data['summary']['totalmethods']}) |
-| Covered methods: | {data['summary']['coveredmethods']} |
-| Total methods: | {data['summary']['totalmethods']} |
+| Parser: | {coverage_data.summary.parser} |
+| Assemblies: | {coverage_data.summary.assemblies} |
+| Classes: | {coverage_data.summary.classes} |
+| Files: | {coverage_data.summary.files} |
+| **Line coverage:** | {coverage_data.summary.linecoverage}% ({coverage_data.summary.coveredlines} of {coverage_data.summary.coverablelines}) |
+| Covered lines: | {coverage_data.summary.coveredlines} |
+| Uncovered lines: | {coverage_data.summary.uncoveredlines} |
+| Coverable lines: | {coverage_data.summary.coverablelines} |
+| Total lines: | {coverage_data.summary.totallines} |
+| **Branch coverage:** | {coverage_data.summary.branchcoverage}% ({coverage_data.summary.coveredbranches} of {coverage_data.summary.totalbranches}) |
+| Covered branches: | {coverage_data.summary.coveredbranches} |
+| Total branches: | {coverage_data.summary.totalbranches} |
+| **Method coverage:** | {coverage_data.summary.methodcoverage}% ({coverage_data.summary.coveredmethods} of {coverage_data.summary.totalmethods}) |
+| Covered methods: | {coverage_data.summary.coveredmethods} |
+| Total methods: | {coverage_data.summary.totalmethods} |
 
 </details>
 """
@@ -53,29 +53,30 @@ def create_report():
 ## Coverage
 
 """
-    for project in data['coverage']['assemblies']:
-        if project['coverage'] is None:
+    for project in coverage_data.coverage.assemblies:
+        if project.coverage is None:
             markdown_content += f"""
-<details><summary>{project['name']} - Excluded from coverage report</summary>
+<details><summary>{project.name} - Excluded from coverage report</summary>
 
 |**Name**|**Line**|**Method**|**Branch**|
 |:---|---:|---:|---:|
-|**{project['name']}**|**NA**|**NA**|**NA**|"""
+|**{project.name}**|**NA**|**NA**|**NA**|"""
         else:
             markdown_content += f"""
-<details><summary>{project['name']} - {project['coverage']}%</summary>
+<details><summary>{project.name} - {project.coverage}%</summary>
 
 |**Name**|**Line**|**Method**|**Branch**|
 |:---|---:|---:|---:|
-|**{project['name']}**|**{project['coverage']}%**|**{project['methodcoverage']}%**|**{project['branchcoverage']}%**|"""
-        for classes in project['classesinassembly']:
-            if classes['branchcoverage'] is None:
-                classes['branchcoverage'] = 0
+|**{project.name}**|**{project.coverage}%**|**{project.methodcoverage}%**|**{project.branchcoverage}%**|"""
+        for class_ in project.classesinassembly:
+            branch_coverage = class_.branchcoverage if class_.branchcoverage is not None else 0
             markdown_content += f"""
-|{classes['name']}|{classes['coverage']}%|{classes['methodcoverage']}%|{classes['branchcoverage']}%|"""
+|{class_.name}|{class_.coverage}%|{class_.methodcoverage}%|{branch_coverage}%|"""
         markdown_content += "\n</details>"
-    f = open(os.path.join(parsed_args.outputDir, "GithubReportSummary.md"), "w")
-    f.write(markdown_content)
+
+    output_path = os.path.join(parsed_args.outputDir, "GithubReportSummary.md")
+    with open(output_path, "w") as f:
+        f.write(markdown_content)
     print(f"GithubReportSummary.md written to {parsed_args.outputDir}")
 
 if __name__ == "__main__":
