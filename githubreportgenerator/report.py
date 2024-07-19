@@ -10,6 +10,8 @@ def create_arg_parser():
     parser = argparse.ArgumentParser(description='A Github Markdown Coverage Report Generator')
     parser.add_argument('reportJson', type=str, help='Path to the generated json report')
     parser.add_argument('--outputDir', type=str, help='Path to where you want to save the report')
+    parser.add_argument('--llc', type=bool, help='Log the total line coverage percentage')
+    parser.add_argument('--lmc', type=bool, help='Log the total method coverage percentage')
     return parser
 
 def create_report():
@@ -78,6 +80,10 @@ def create_report():
     with open(output_path, "w") as f:
         f.write(markdown_content)
     print(f"GithubReportSummary.md written to {parsed_args.outputDir}")
+    if parsed_args.llc:
+        print(coverage_data.summary.linecoverage)
+    if parsed_args.lmc:
+        print(coverage_data.summary.methodcoverage)
 
 if __name__ == "__main__":
     create_report()
