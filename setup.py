@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-VERSION = '0.0.3'
+VERSION = '0.0.4'
 DESCRIPTION = 'A Dotnet Github Markdown Coverage Report Generator'
 LONG_DESCRIPTION = 'Create a Github Markdown Coverage Report using a JSON Summary from reportgenerator'
 
